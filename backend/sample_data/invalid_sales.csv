@@ -1,0 +1,5 @@
+order_id,order_date,product_name,category,quantity,unit_price,total_revenue,store_name,region_name
+BAD001,not-a-date,iphone 14,Phone,2,800,1600,Store A,Hue
+BAD002,2026-04-01,airpods pro,Accessory,-3,200,-600,Store A,Hue
+BAD003,2026-04-02,samsung s24,Phone,1,950,999,Store B,Da Nang
+BAD003,2026-04-02,samsung s24,Phone,1,950,999,Store B,Da Nang

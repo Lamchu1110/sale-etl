@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+._*
+
+# Environments
+.env
+venv/
+env/
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+dist/
+
+# Database
+*.db
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/

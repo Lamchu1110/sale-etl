@@ -1,0 +1,102 @@
+.pageHeader {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 28px;
+}
+.pageTitle {
+  font-size: 26px; font-weight: 800; margin-bottom: 4px;
+  background: linear-gradient(135deg, #06B6D4, #22C55E);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.pageDesc { font-size: 14px; color: var(--text-secondary); }
+
+/* ─── Generate Section ─────────────────────────────────────────── */
+.generateCard {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px;
+  margin-bottom: 24px;
+  display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;
+}
+.field { display: flex; flex-direction: column; gap: 6px; }
+.label {
+  font-size: 12px; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.input {
+  width: 120px; padding: 9px 14px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg);
+  font-size: 14px; font-weight: 600; color: var(--text-primary);
+  outline: none; transition: border-color 0.2s;
+}
+.input:focus { border-color: #06B6D4; }
+
+.generateBtn {
+  display: flex; align-items: center; gap: 7px;
+  padding: 10px 22px; border-radius: 8px;
+  background: linear-gradient(135deg, #06B6D4, #22C55E);
+  color: #fff; font-weight: 600; font-size: 13px;
+  border: none; cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.generateBtn:hover { opacity: 0.9; transform: translateY(-1px); }
+.generateBtn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.spinner {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff; border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Chart ────────────────────────────────────────────────────── */
+.chartCard {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px;
+  margin-bottom: 24px;
+}
+.chartTitle {
+  font-size: 15px; font-weight: 700; margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px;
+  color: var(--text-primary);
+}
+.chartTitle svg { color: var(--text-muted); }
+
+.emptyChart {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 12px; padding: 60px; color: var(--text-muted); font-size: 14px;
+}
+
+/* ─── History Table ────────────────────────────────────────────── */
+.tableWrap {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.sectionTitle {
+  font-size: 15px; font-weight: 700; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.table thead { background: rgba(6, 182, 212, 0.04); }
+.table th {
+  text-align: left; padding: 12px 16px;
+  font-weight: 600; color: var(--text-muted); font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+}
+.table td {
+  padding: 11px 16px; border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+}
+.table tbody tr:last-child td { border-bottom: none; }
+.table tbody tr { transition: background 0.15s; }
+.table tbody tr:hover { background: rgba(6, 182, 212, 0.03); }
+
+.numCell { font-variant-numeric: tabular-nums; }
+.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; }
+
+.loading {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 60px; gap: 14px;
+  color: var(--text-muted); font-size: 14px;
+}
+.spinAnim { animation: spin 1s linear infinite; }

@@ -1,0 +1,133 @@
+.pageHeader {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 28px;
+}
+.pageTitle {
+  font-size: 26px; font-weight: 800; margin-bottom: 4px;
+  background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.pageDesc { font-size: 14px; color: var(--text-secondary); }
+
+/* ─── KPI Cards ────────────────────────────────────────────────── */
+.kpiGrid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px;
+  margin-bottom: 28px;
+}
+@media (max-width: 1100px) { .kpiGrid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px)  { .kpiGrid { grid-template-columns: 1fr; } }
+
+.kpiCard {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 22px 24px;
+  display: flex; align-items: flex-start; gap: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative; overflow: hidden;
+}
+.kpiCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(99, 102, 241, 0.1);
+}
+.kpiCard::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+.kpiCard:nth-child(1)::after { background: linear-gradient(90deg, #6366F1, #818CF8); }
+.kpiCard:nth-child(2)::after { background: linear-gradient(90deg, #22C55E, #4ADE80); }
+.kpiCard:nth-child(3)::after { background: linear-gradient(90deg, #F59E0B, #FBBF24); }
+.kpiCard:nth-child(4)::after { background: linear-gradient(90deg, #EC4899, #F472B6); }
+
+.kpiIcon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.kpiIcon.purple { background: rgba(99, 102, 241, 0.12); color: #6366F1; }
+.kpiIcon.green  { background: rgba(34, 197, 94, 0.12);  color: #22C55E; }
+.kpiIcon.amber  { background: rgba(245, 158, 11, 0.12); color: #F59E0B; }
+.kpiIcon.pink   { background: rgba(236, 72, 153, 0.12); color: #EC4899; }
+
+.kpiInfo { flex: 1; }
+.kpiLabel { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.kpiValue { font-size: 26px; font-weight: 800; line-height: 1.1; color: var(--text-primary); }
+
+/* ─── Chart Cards ──────────────────────────────────────────────── */
+.chartGrid {
+  display: grid; grid-template-columns: 1fr; gap: 22px;
+  margin-bottom: 22px;
+}
+.chartGridHalf {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 22px;
+}
+@media (max-width: 900px) { .chartGridHalf { grid-template-columns: 1fr; } }
+
+.chartCard {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px;
+  transition: box-shadow 0.2s;
+}
+.chartCard:hover { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06); }
+
+.chartTitle {
+  font-size: 15px; font-weight: 700; margin-bottom: 20px;
+  display: flex; align-items: center; gap: 8px;
+  color: var(--text-primary);
+}
+.chartTitle svg { color: var(--text-muted); }
+
+/* ─── Loading / Empty ──────────────────────────────────────────── */
+.loading {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 80px; gap: 16px;
+  color: var(--text-muted); font-size: 14px;
+}
+.spinAnim { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.skeletonKpi {
+  height: 95px; border-radius: var(--radius);
+  background: var(--card); border: 1px solid var(--border);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+.skeletonChart {
+  height: 300px; border-radius: var(--radius);
+  background: var(--card); border: 1px solid var(--border);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ─── Recharts overrides ───────────────────────────────────────── */
+.chartCard :global(.recharts-cartesian-grid-horizontal line),
+.chartCard :global(.recharts-cartesian-grid-vertical line) {
+  stroke: var(--border); stroke-dasharray: 3 3;
+}
+.chartCard :global(.recharts-text) {
+  font-size: 11px; fill: var(--text-muted);
+}
+
+/* ─── Compact Pie Legend ───────────────────────────────────────── */
+.legendWrap {
+  display: flex; flex-wrap: wrap; gap: 6px 14px;
+  justify-content: center; padding: 6px 8px 0;
+  max-height: 80px; overflow: hidden;
+}
+.legendItem {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--text-muted); white-space: nowrap;
+}
+.legendDot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.legendMore {
+  font-size: 11px; color: var(--text-muted);
+  font-style: italic; align-self: center;
+}
+
+/* ─── Mobile responsive ────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .pageHeader { flex-direction: column; gap: 8px; }
+  .kpiValue { font-size: 20px; }
+  .chartCard { padding: 16px; }
+}

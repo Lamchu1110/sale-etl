@@ -1,0 +1,15 @@
+/* App-level layout styles */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+.main-content {
+  flex: 1;
+  margin-left: var(--sidebar-w);
+  padding: 32px;
+  min-height: 100vh;
+  transition: margin var(--transition);
+}
+@media (max-width: 768px) {
+  .main-content { margin-left: 0; padding: 16px; }
+}

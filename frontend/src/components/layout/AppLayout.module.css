@@ -1,0 +1,24 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+.main {
+  flex: 1;
+  margin-left: var(--sidebar-w);
+  padding: 36px 40px;
+  min-height: 100vh;
+  animation: fadeIn .35s ease both;
+  min-width: 0; /* prevent flex overflow */
+}
+
+/* Tablet / Mobile: no left margin, add top padding for hamburger */
+@media (max-width: 900px) {
+  .main {
+    margin-left: 0;
+    padding: 68px 20px 28px; /* top gap for hamburger button */
+  }
+}
+
+@media (max-width: 480px) {
+  .main { padding: 68px 14px 24px; }
+}

@@ -1,0 +1,6 @@
+order_id,order_date,product_name,category,quantity,unit_price,total_revenue,store_name,region_name
+WS001,2026-04-01,iphone 14,Phone,2,800,1600,Store A,Hue
+WS002,2026-04-01,airpods pro,Accessory,3,200,600,Store A,Hue
+WS003,2026-04-02,samsung s24,Phone,1,950,950,Store B,Da Nang
+WS004,2026-04-03,macbook air,Laptop,1,1200,1200,Store C,Hanoi
+WS005,2026-04-03,ipad air,Tablet,2,650,1300,Store B,Da Nang
