@@ -163,7 +163,14 @@ export default function DashboardPage() {
               <LineChart data={trend} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="period" tickFormatter={v => v?.slice(5) || v} tick={{ fontSize: 11 }} />
-                <YAxis tickFormatter={v => fmtCurrency(v)} tick={{ fontSize: 11 }} width={60} />
+               {/* Update YAxis at DashboardPage.jsx */}
+                <YAxis 
+                  tickFormatter={v => fmtCurrency(v)} 
+                  tick={{ fontSize: 11 }} 
+                  width={60} 
+                  domain={['dataMin', 'dataMax']}
+                  padding={{ top: 20, bottom: 20 }}
+                />
                 <Tooltip
                   formatter={(v) => [fmtCurrency(v), 'Revenue']}
                   labelFormatter={l => `Date: ${l}`}
