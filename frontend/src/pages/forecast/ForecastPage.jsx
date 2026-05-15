@@ -5,7 +5,7 @@ import {
   TrendingUp, Play, Loader, Clock, BarChart2
 } from 'lucide-react';
 import {
-  ResponsiveContainer, LineChart, Line, XAxis, YAxis,
+  ResponsiveContainer, AreaChart, Area, XAxis, YAxis,
   CartesianGrid, Tooltip
 } from 'recharts';
 import AppLayout from '../../components/layout/AppLayout';
@@ -108,27 +108,41 @@ export default function ForecastPage() {
               <TrendingUp size={16} /> Predicted Revenue
             </div>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
+              <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#06B6D4" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="target_date"
                   tickFormatter={v => v?.slice(5) || v}
                 />
-                <YAxis tickFormatter={v => fmtCurrency(v)} />
+                
+                <YAxis 
+                  tickFormatter={v => fmtCurrency(v)} 
+                  domain={['dataMin', 'dataMax']} 
+                  padding={{ top: 20, bottom: 20 }} 
+                />
+                
                 <Tooltip
                   formatter={(v) => [fmtCurrency(v), 'Predicted Revenue']}
                   labelFormatter={l => `Date: ${l}`}
                   contentStyle={{ borderRadius: 10, border: '1px solid var(--border)', fontSize: 12 }}
                 />
-                <Line
+                <Area
                   type="monotone"
                   dataKey="predicted_revenue"
                   stroke="#06B6D4"
                   strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#colorRevenue)"
                   dot={{ r: 3, fill: '#06B6D4' }}
                   activeDot={{ r: 5 }}
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         )}
