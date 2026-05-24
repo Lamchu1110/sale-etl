@@ -77,6 +77,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+*.ipynb
 
 # IPython
 profile_default/
@@ -178,8 +179,19 @@ backup/
 datasets/
 models/
 runs/
+weights/
 *.zip
+
+# Project documents and notes
+*.pdf
+*.docx
+*.md
+!README_CODE.md
 
 # Ray
 deployment/logs/
 deployment/ray_temp/
+deployment/.ray_tmp/
+
+# Local run helpers
+deployment/Makefile

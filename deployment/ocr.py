@@ -1,6 +1,7 @@
 import os
 import tempfile
 from io import BytesIO
+from pathlib import Path
 
 import numpy as np
 import requests
@@ -17,8 +18,9 @@ from ultralytics.utils.plotting import Annotator, colors
 app = FastAPI()
 
 # Constants
-TEXT_DET_MODEL_PATH = "../runs/detect/train/weights/best.pt"
-OCR_MODEL_PATH = "../ocr_crnn.pt"
+BASE_DIR = Path(__file__).resolve().parent.parent
+TEXT_DET_MODEL_PATH = BASE_DIR / "weights" / "best.pt"
+OCR_MODEL_PATH = BASE_DIR / "weights" / "ocr_crnn.pt"
 
 # Character set configuration
 CHARS = "0123456789abcdefghijklmnopqrstuvwxyz-"
