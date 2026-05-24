@@ -7,6 +7,7 @@
 venv/
 env/
 .venv/
+backend/venv_unix_backup/
 
 # Python
 __pycache__/
@@ -19,6 +20,12 @@ dist/
 # Database
 *.db
 *.sqlite3
+
+# Local uploads and generated documents
+backend/uploads/
+docs/
+RULES.md
+*.docx
 
 # IDE
 .vscode/

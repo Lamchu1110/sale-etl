@@ -11,10 +11,12 @@ from api.router import api_router
 from core.config import settings
 from core.database import Base, engine
 from core.bootstrap import load_model_modules
+from core.schema_migrations import ensure_runtime_schema
 from fastapi.responses import JSONResponse
 
 load_model_modules()
 Base.metadata.create_all(bind=engine)
+ensure_runtime_schema(engine)
 
 app = FastAPI(title=settings.app_name, version='1.0.0')
 app.add_middleware(

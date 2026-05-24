@@ -17,26 +17,26 @@ def get_summary(
     region: str | None = Query(default=None),
     product: str | None = Query(default=None),
     db: Session = Depends(get_db),
-    _=Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
-    return dashboard_summary(db, start_date, end_date, region, product)
+    return dashboard_summary(db, current_user, start_date, end_date, region, product)
 
 
 @router.get('/revenue-by-region', response_model=list[RevenueByDimension])
-def get_rev_by_region(db: Session = Depends(get_db), _=Depends(get_current_user)):
-    return revenue_by_region(db)
+def get_rev_by_region(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    return revenue_by_region(db, current_user)
 
 
 @router.get('/revenue-by-product', response_model=list[RevenueByDimension])
-def get_rev_by_product(limit: int = 10, db: Session = Depends(get_db), _=Depends(get_current_user)):
-    return revenue_by_product(db, limit)
+def get_rev_by_product(limit: int = 10, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    return revenue_by_product(db, current_user, limit)
 
 
 @router.get('/trend', response_model=list[TrendPoint])
-def get_trend(db: Session = Depends(get_db), _=Depends(get_current_user)):
-    return revenue_trend(db)
+def get_trend(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    return revenue_trend(db, current_user)
 
 
 @router.get('/kpis', response_model=list[KPIOut])
-def get_kpis(db: Session = Depends(get_db), _=Depends(get_current_user)):
-    return calculate_kpis(db)
+def get_kpis(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    return calculate_kpis(db, current_user)

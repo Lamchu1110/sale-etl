@@ -4,11 +4,21 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from models.sales_cleaned import SalesCleaned
 from models.sales_forecast import SalesForecast
+from models.upload_batch import UploadBatch
 
 
-def generate_forecast(db: Session, periods: int = 7):
+def _forecast_source_query(db: Session, current_user):
+    query = db.query(SalesCleaned.order_date, func.sum(SalesCleaned.total_revenue))
+    if current_user.role != 'admin':
+        query = query.join(UploadBatch, SalesCleaned.batch_id == UploadBatch.id).filter(
+            UploadBatch.uploader_id == current_user.id
+        )
+    return query
+
+
+def generate_forecast(db: Session, current_user, periods: int = 7):
     history = (
-        db.query(SalesCleaned.order_date, func.sum(SalesCleaned.total_revenue))
+        _forecast_source_query(db, current_user)
         .group_by(SalesCleaned.order_date)
         .order_by(SalesCleaned.order_date.asc())
         .all()
@@ -32,10 +42,14 @@ def generate_forecast(db: Session, periods: int = 7):
 
     # Remove existing forecasts for the same dates to avoid duplicates
     if target_dates:
-        db.query(SalesForecast).filter(SalesForecast.target_date.in_(target_dates)).delete(synchronize_session=False)
+        db.query(SalesForecast).filter(
+            SalesForecast.target_date.in_(target_dates),
+            SalesForecast.created_by_user_id == current_user.id,
+        ).delete(synchronize_session=False)
 
     for point in points:
         record = SalesForecast(
+            created_by_user_id=current_user.id,
             target_date=point['target_date'],
             predicted_revenue=point['predicted_revenue'],
             model_name='linear_trend',
@@ -45,5 +59,8 @@ def generate_forecast(db: Session, periods: int = 7):
     return points
 
 
-def get_saved_forecasts(db: Session):
-    return db.query(SalesForecast).order_by(SalesForecast.target_date.asc()).all()
+def get_saved_forecasts(db: Session, current_user):
+    query = db.query(SalesForecast)
+    if current_user.role != 'admin':
+        query = query.filter(SalesForecast.created_by_user_id == current_user.id)
+    return query.order_by(SalesForecast.target_date.asc()).all()

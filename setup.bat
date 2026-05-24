@@ -84,11 +84,11 @@ echo.
 echo   Backend su dung SQLite (khong can PostgreSQL)
 echo.
 echo   Chay ung dung:
-echo   Terminal 1: cd backend ^&^& venv\Scripts\activate ^&^& uvicorn main:app --reload
+echo   Terminal 1: cd backend ^&^& venv\Scripts\activate ^&^& python -m uvicorn main:app --app-dir . --host 127.0.0.1 --port 8001
 echo   Terminal 2: cd frontend ^&^& npm run dev
 echo.
 echo   Truy cap: http://localhost:5173
-echo   API Docs: http://localhost:8000/docs
+echo   API Docs: http://localhost:8001/docs
 echo ============================================================
 echo.
 pause

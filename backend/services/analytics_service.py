@@ -3,12 +3,19 @@ from __future__ import annotations
 from datetime import datetime
 from sqlalchemy import func, distinct
 from sqlalchemy.orm import Session
+from models.upload_batch import UploadBatch
 from models.sales_cleaned import SalesCleaned
 
 
-def _base_query(db: Session, start_date: str | None = None, end_date: str | None = None, region: str | None = None, product: str | None = None):
+def _apply_user_scope(query, current_user):
+    if current_user.role == 'admin':
+        return query
+    return query.join(UploadBatch, SalesCleaned.batch_id == UploadBatch.id).filter(UploadBatch.uploader_id == current_user.id)
+
+
+def _base_query(db: Session, current_user, start_date: str | None = None, end_date: str | None = None, region: str | None = None, product: str | None = None):
     """Return a filtered base query for SalesCleaned."""
-    query = db.query(SalesCleaned)
+    query = _apply_user_scope(db.query(SalesCleaned), current_user)
     if start_date:
         query = query.filter(SalesCleaned.order_date >= datetime.fromisoformat(start_date).date())
     if end_date:
@@ -20,9 +27,9 @@ def _base_query(db: Session, start_date: str | None = None, end_date: str | None
     return query
 
 
-def dashboard_summary(db: Session, start_date: str | None = None, end_date: str | None = None, region: str | None = None, product: str | None = None):
+def dashboard_summary(db: Session, current_user, start_date: str | None = None, end_date: str | None = None, region: str | None = None, product: str | None = None):
     """Use SQL aggregations instead of loading all rows into Python memory."""
-    base = _base_query(db, start_date, end_date, region, product)
+    base = _base_query(db, current_user, start_date, end_date, region, product)
 
     result = base.with_entities(
         func.coalesce(func.sum(SalesCleaned.total_revenue), 0).label('total_revenue'),
@@ -43,9 +50,9 @@ def dashboard_summary(db: Session, start_date: str | None = None, end_date: str 
     }
 
 
-def revenue_by_region(db: Session):
+def revenue_by_region(db: Session, current_user):
     rows = (
-        db.query(SalesCleaned.region_name, func.sum(SalesCleaned.total_revenue))
+        _apply_user_scope(db.query(SalesCleaned.region_name, func.sum(SalesCleaned.total_revenue)), current_user)
         .group_by(SalesCleaned.region_name)
         .order_by(func.sum(SalesCleaned.total_revenue).desc())
         .all()
@@ -53,9 +60,9 @@ def revenue_by_region(db: Session):
     return [{'label': label, 'revenue': round(float(revenue or 0), 2)} for label, revenue in rows]
 
 
-def revenue_by_product(db: Session, limit: int = 10):
+def revenue_by_product(db: Session, current_user, limit: int = 10):
     rows = (
-        db.query(SalesCleaned.product_name, func.sum(SalesCleaned.total_revenue))
+        _apply_user_scope(db.query(SalesCleaned.product_name, func.sum(SalesCleaned.total_revenue)), current_user)
         .group_by(SalesCleaned.product_name)
         .order_by(func.sum(SalesCleaned.total_revenue).desc())
         .limit(limit)
@@ -64,9 +71,9 @@ def revenue_by_product(db: Session, limit: int = 10):
     return [{'label': label, 'revenue': round(float(revenue or 0), 2)} for label, revenue in rows]
 
 
-def revenue_trend(db: Session):
+def revenue_trend(db: Session, current_user):
     rows = (
-        db.query(SalesCleaned.order_date, func.sum(SalesCleaned.total_revenue))
+        _apply_user_scope(db.query(SalesCleaned.order_date, func.sum(SalesCleaned.total_revenue)), current_user)
         .group_by(SalesCleaned.order_date)
         .order_by(SalesCleaned.order_date.asc())
         .all()
@@ -74,15 +81,17 @@ def revenue_trend(db: Session):
     return [{'period': str(period), 'revenue': round(float(revenue or 0), 2)} for period, revenue in rows]
 
 
-def calculate_kpis(db: Session):
-    summary = dashboard_summary(db)
+def calculate_kpis(db: Session, current_user):
+    summary = dashboard_summary(db, current_user)
 
     # Meaningful KPI: percentage of total rows that passed cleaning
-    from models.upload_batch import UploadBatch
-    batch_stats = db.query(
+    batch_query = db.query(
         func.coalesce(func.sum(UploadBatch.valid_rows), 0),
         func.coalesce(func.sum(UploadBatch.total_rows), 0),
-    ).filter(UploadBatch.file_status == 'processed').first()
+    ).filter(UploadBatch.file_status == 'processed')
+    if current_user.role != 'admin':
+        batch_query = batch_query.filter(UploadBatch.uploader_id == current_user.id)
+    batch_stats = batch_query.first()
 
     valid_total = int(batch_stats[0])
     all_total = int(batch_stats[1])
