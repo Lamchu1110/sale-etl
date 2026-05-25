@@ -7,15 +7,23 @@ import {
 } from 'lucide-react';
 import AppLayout from '../../components/layout/AppLayout';
 import StatusBadge from '../../components/common/StatusBadge';
-import { uploadService, etlService } from '../../services/apiServices';
+import { businessService, uploadService, etlService } from '../../services/apiServices';
 import styles from './UploadPage.module.css';
 import { format } from 'date-fns';
+
+const currentYear = new Date().getFullYear();
 
 export default function UploadPage() {
   const [file, setFile]           = useState(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress]   = useState(0);
   const [batches, setBatches]     = useState([]);
+  const [businesses, setBusinesses] = useState([]);
+  const [metadata, setMetadata] = useState({
+    business_id: 1,
+    data_year: currentYear,
+    data_type: 'base',
+  });
   const [loadingBatches, setLoadingBatches] = useState(true);
   const [runningETL, setRunningETL] = useState({});
 
@@ -32,6 +40,24 @@ export default function UploadPage() {
   }, []);
 
   useEffect(() => { fetchBatches(); }, [fetchBatches]);
+
+  useEffect(() => {
+    const loadBusinesses = async () => {
+      try {
+        const data = await businessService.getAll();
+        setBusinesses(data);
+        setMetadata(p => (
+          data.length && !data.some(b => b.id === Number(p.business_id))
+            ? { ...p, business_id: data[0].id }
+            : p
+        ));
+      } catch (err) {
+        toast.error('Failed to load businesses');
+        console.error('Fetch businesses failed:', err);
+      }
+    };
+    loadBusinesses();
+  }, []);
 
   // Dropzone
   const onDrop = useCallback((accepted, rejected) => {
@@ -51,10 +77,14 @@ export default function UploadPage() {
 
   const handleUpload = async () => {
     if (!file) return;
+    if (!metadata.data_year || metadata.data_year < 1900 || metadata.data_year > 2200) {
+      toast.error('Data year must be between 1900 and 2200');
+      return;
+    }
     setUploading(true);
     setProgress(0);
     try {
-      const batch = await uploadService.uploadCSV(file, setProgress);
+      const batch = await uploadService.uploadCSV(file, setProgress, metadata);
       toast.success(`File uploaded! Batch #${batch.id} created.`);
       setFile(null);
       setProgress(0);
@@ -88,6 +118,9 @@ export default function UploadPage() {
     return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   };
 
+  const getBusinessName = (id) =>
+    businesses.find(b => b.id === Number(id))?.name || 'Default Business';
+
   return (
     <AppLayout>
       <div className="fade-in">
@@ -107,6 +140,50 @@ export default function UploadPage() {
 
         {/* Upload zone */}
         <div className={styles.uploadCard}>
+          <div className={styles.metadataGrid}>
+            <label className={styles.metaField}>
+              <span>Business</span>
+              <select
+                className={styles.metaInput}
+                value={metadata.business_id}
+                onChange={e => setMetadata(p => ({ ...p, business_id: Number(e.target.value) }))}
+                disabled={uploading}
+              >
+                {businesses.length === 0 ? (
+                  <option value={1}>Default Business</option>
+                ) : businesses.map(b => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className={styles.metaField}>
+              <span>Data Year</span>
+              <input
+                className={styles.metaInput}
+                type="number"
+                min={1900}
+                max={2200}
+                value={metadata.data_year}
+                onChange={e => setMetadata(p => ({ ...p, data_year: Number(e.target.value) }))}
+                disabled={uploading}
+              />
+            </label>
+
+            <label className={styles.metaField}>
+              <span>Data Type</span>
+              <select
+                className={styles.metaInput}
+                value={metadata.data_type}
+                onChange={e => setMetadata(p => ({ ...p, data_type: e.target.value }))}
+                disabled={uploading}
+              >
+                <option value="base">Base year data</option>
+                <option value="actual">Actual comparison data</option>
+              </select>
+            </label>
+          </div>
+
           <div
             {...getRootProps()}
             className={`${styles.dropzone} ${isDragActive ? styles.dragging : ''} ${file ? styles.hasFile : ''}`}
@@ -194,6 +271,9 @@ export default function UploadPage() {
                   <tr>
                     <th>#</th>
                     <th>File Name</th>
+                    <th>Business</th>
+                    <th>Year</th>
+                    <th>Type</th>
                     <th>Upload Time</th>
                     <th>Status</th>
                     <th>Total</th>
@@ -211,6 +291,13 @@ export default function UploadPage() {
                           <FileText size={14} color="#94A3B8" />
                           <span>{b.file_name}</span>
                         </div>
+                      </td>
+                      <td>{getBusinessName(b.business_id)}</td>
+                      <td className={styles.numCell}>{b.data_year || '—'}</td>
+                      <td>
+                        <span className={`${styles.typeBadge} ${styles[`type_${b.data_type || 'base'}`]}`}>
+                          {b.data_type || 'base'}
+                        </span>
                       </td>
                       <td className={styles.timeCell}>
                         <Clock size={12} />

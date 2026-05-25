@@ -8,6 +8,7 @@ import UploadPage     from './pages/upload/UploadPage';
 import DashboardPage  from './pages/dashboard/DashboardPage';
 import ETLStatusPage  from './pages/etl/ETLStatusPage';
 import ForecastPage   from './pages/forecast/ForecastPage';
+import EvaluationPage from './pages/evaluation/EvaluationPage';
 import AdminPage      from './pages/admin/AdminPage';
 import NotFoundPage   from './pages/NotFoundPage';
 
@@ -23,6 +24,7 @@ export default function App() {
             <Route path="/upload"     element={<UploadPage />} />
             <Route path="/etl-status" element={<ETLStatusPage />} />
             <Route path="/forecast"   element={<ForecastPage />} />
+            <Route path="/evaluation" element={<EvaluationPage />} />
             <Route path="/admin"      element={<AdminPage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />

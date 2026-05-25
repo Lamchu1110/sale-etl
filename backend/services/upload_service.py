@@ -13,7 +13,8 @@ CHUNK_SIZE = 64 * 1024  # 64 KB chunks
 def save_upload_file(batch_id: int, file: UploadFile) -> Path:
     """Save uploaded file with chunked reading to prevent memory exhaustion."""
     max_bytes = settings.max_file_size_mb * 1024 * 1024
-    file_path = UPLOAD_DIR / f'batch_{batch_id}_{file.filename}'
+    safe_filename = Path(file.filename or 'upload.csv').name
+    file_path = UPLOAD_DIR / f'batch_{batch_id}_{safe_filename}'
 
     bytes_written = 0
     try:
@@ -40,6 +41,15 @@ def save_upload_file(batch_id: int, file: UploadFile) -> Path:
     return file_path
 
 
-def get_batch_file_path(batch_id: int) -> Path | None:
-    matches = list(UPLOAD_DIR.glob(f'batch_{batch_id}_*'))
+def get_batch_file_path(batch_id: int, file_name: str | None = None) -> Path | None:
+    if file_name:
+        exact_path = UPLOAD_DIR / f'batch_{batch_id}_{Path(file_name).name}'
+        if exact_path.exists():
+            return exact_path
+
+    matches = sorted(
+        UPLOAD_DIR.glob(f'batch_{batch_id}_*'),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
     return matches[0] if matches else None

@@ -7,6 +7,7 @@ if str(BASE_DIR) not in sys.path:
 from core.bootstrap import load_model_modules
 from core.database import Base, engine, SessionLocal
 from core.security import get_password_hash
+from models.business import Business
 from models.user import User
 
 load_model_modules()
@@ -14,6 +15,8 @@ Base.metadata.create_all(bind=engine)
 
 db = SessionLocal()
 try:
+    if not db.query(Business).filter(Business.id == 1).first():
+        db.add(Business(id=1, name='Default Business', industry='General', notes='Created automatically for demo data'))
     if not db.query(User).filter(User.username == 'admin').first():
         db.add(User(username='admin', email='admin@example.com', hashed_password=get_password_hash('admin123'), role='admin'))
     if not db.query(User).filter(User.username == 'user').first():

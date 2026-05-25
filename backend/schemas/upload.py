@@ -8,6 +8,9 @@ from pydantic import BaseModel
 class BatchOut(BaseModel):
     id: int
     uploader_id: int
+    business_id: Optional[int] = None
+    data_year: Optional[int] = None
+    data_type: str = 'base'
     file_name: str
     stored_path: Optional[str] = None
     file_status: str
@@ -26,3 +29,6 @@ class BatchUpdate(BaseModel):
     """Admin-only batch update. All fields optional."""
     notes: Optional[str] = None
     file_status: Optional[str] = None
+    business_id: Optional[int] = None
+    data_year: Optional[int] = None
+    data_type: Optional[str] = None

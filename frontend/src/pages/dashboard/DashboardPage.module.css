@@ -9,6 +9,44 @@
 }
 .pageDesc { font-size: 14px; color: var(--text-secondary); }
 
+.filterPanel {
+  display: flex; align-items: flex-end; gap: 12px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 12px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+}
+.filterField {
+  display: flex; flex-direction: column; gap: 6px;
+  min-width: 160px;
+}
+.filterField span {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+  color: var(--text-muted); text-transform: uppercase;
+}
+.filterField select {
+  height: 40px; border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #F8FAFC; color: var(--text-primary);
+  padding: 0 12px; font-weight: 700; outline: none;
+}
+.filterField select:focus {
+  border-color: #6366F1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.errorBanner,
+.emptyBanner {
+  border-radius: 14px; padding: 12px 14px; margin-bottom: 18px;
+  font-size: 13px; font-weight: 600;
+}
+.errorBanner {
+  background: #FEF2F2; border: 1px solid #FECACA; color: #B91C1C;
+}
+.emptyBanner {
+  background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E;
+}
+
 /* ─── KPI Cards ────────────────────────────────────────────────── */
 .kpiGrid {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px;
@@ -66,6 +104,7 @@
   transition: box-shadow 0.2s;
 }
 .chartCard:hover { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06); }
+.chartMuted { opacity: 0.65; }
 
 .chartTitle {
   font-size: 15px; font-weight: 700; margin-bottom: 20px;
@@ -73,6 +112,15 @@
   color: var(--text-primary);
 }
 .chartTitle svg { color: var(--text-muted); }
+
+.emptyChart {
+  height: 320px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px dashed var(--border); border-radius: 14px;
+  color: var(--text-muted); font-size: 13px; font-weight: 600;
+  background: #F8FAFC;
+  text-align: center; padding: 24px;
+}
 
 /* ─── Loading / Empty ──────────────────────────────────────────── */
 .loading {
@@ -128,6 +176,8 @@
 /* ─── Mobile responsive ────────────────────────────────────────── */
 @media (max-width: 600px) {
   .pageHeader { flex-direction: column; gap: 8px; }
+  .filterPanel { width: 100%; flex-direction: column; align-items: stretch; }
+  .filterField { min-width: 0; }
   .kpiValue { font-size: 20px; }
   .chartCard { padding: 16px; }
 }

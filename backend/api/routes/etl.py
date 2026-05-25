@@ -50,4 +50,4 @@ def get_quality(batch_id: int, db: Session = Depends(get_db), current_user: User
 def preview(batch_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     batch = db.query(UploadBatch).filter(UploadBatch.id == batch_id).first()
     _check_access(batch, current_user)
-    return preview_validation_rules(get_batch_file_path(batch_id))
+    return preview_validation_rules(get_batch_file_path(batch_id, batch.file_name))

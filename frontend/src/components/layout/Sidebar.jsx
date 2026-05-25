@@ -5,7 +5,7 @@ import styles from './Sidebar.module.css';
 import {
   LayoutDashboard, Upload, ClipboardList,
   Settings, LogOut, Database, ChevronRight, TrendingUp,
-  Menu, X,
+  Menu, X, CheckCircle2,
 } from 'lucide-react';
 
 const getNavItems = (role) => {
@@ -14,6 +14,7 @@ const getNavItems = (role) => {
     { to: '/upload',     label: 'Upload Data',  icon: Upload          },
     { to: '/etl-status', label: 'ETL Status',   icon: Database        },
     { to: '/forecast',   label: 'Forecast',     icon: TrendingUp      },
+    { to: '/evaluation', label: 'Evaluation',   icon: CheckCircle2    },
   ];
   if (role === 'admin') {
     items.push({ to: '/admin', label: 'Admin Panel', icon: ClipboardList });

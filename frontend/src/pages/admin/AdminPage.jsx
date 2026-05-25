@@ -223,7 +223,7 @@ function BatchesTab({ data, setData }) {
           <thead>
             <tr>
               <th>#</th><th>File Name</th><th>Uploaded</th><th>Status</th>
-              <th>Total</th><th>Valid</th><th>Invalid</th><th>Notes</th>
+              <th>Year</th><th>Type</th><th>Total</th><th>Valid</th><th>Invalid</th><th>Notes</th>
               <th className={styles.actionsCol}>Actions</th>
             </tr>
           </thead>
@@ -234,6 +234,12 @@ function BatchesTab({ data, setData }) {
                 <td className={styles.fileCell}>{b.file_name}</td>
                 <td>{b.uploaded_at ? format(new Date(b.uploaded_at), 'dd MMM yyyy, HH:mm') : '—'}</td>
                 <td><StatusBadge status={b.file_status} /></td>
+                <td className={styles.numCell}>{b.data_year || '—'}</td>
+                <td>
+                  <span className={`${styles.typeBadge} ${styles[`type_${b.data_type || 'base'}`]}`}>
+                    {b.data_type || 'base'}
+                  </span>
+                </td>
                 <td className={styles.numCell}>{b.total_rows}</td>
                 <td className={`${styles.numCell} ${styles.green}`}>{b.valid_rows}</td>
                 <td className={`${styles.numCell} ${b.invalid_rows > 0 ? styles.red : ''}`}>{b.invalid_rows}</td>

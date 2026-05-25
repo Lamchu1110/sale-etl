@@ -5,8 +5,10 @@ import json
 from pathlib import Path
 import pandas as pd
 from sqlalchemy.orm import Session
+from models.actual_revenue import ActualRevenue
 from models.data_quality_report import DataQualityReport
 from models.etl_log import ETLLog
+from models.monthly_revenue import MonthlyRevenue
 from models.product import Product
 from models.region import Region
 from models.sales_cleaned import SalesCleaned
@@ -141,6 +143,79 @@ def preview_validation_rules(file_path: Path | None) -> dict:
 
 # ── Dimension lookup helpers (with per-batch caching) ──────────────
 
+def _infer_data_year(clean_df: pd.DataFrame) -> int | None:
+    if clean_df.empty or 'order_date' not in clean_df.columns:
+        return None
+    years = clean_df['order_date'].dt.year.dropna()
+    if years.empty:
+        return None
+    return int(years.mode().iloc[0])
+
+
+def _iqr_outlier_mask(series: pd.Series) -> pd.Series:
+    numeric = pd.to_numeric(series, errors='coerce')
+    valid = numeric.dropna()
+    mask = pd.Series(False, index=series.index)
+    if len(valid) < 4:
+        return mask
+
+    q1 = valid.quantile(0.25)
+    q3 = valid.quantile(0.75)
+    iqr = q3 - q1
+    if pd.isna(iqr) or iqr <= 0:
+        return mask
+
+    lower_bound = q1 - 1.5 * iqr
+    upper_bound = q3 + 1.5 * iqr
+    return numeric.lt(lower_bound) | numeric.gt(upper_bound)
+
+
+def _monthly_base_records(clean_df: pd.DataFrame, business_id: int, data_year: int, batch_id: int) -> list[dict]:
+    year_df = clean_df[clean_df['order_date'].dt.year == data_year].copy()
+    if year_df.empty:
+        return []
+    year_df['month'] = year_df['order_date'].dt.month.astype(int)
+    grouped = (
+        year_df.groupby('month')
+        .agg(
+            revenue=('total_revenue', 'sum'),
+            total_orders=('order_id', 'nunique'),
+            total_quantity=('quantity', 'sum'),
+        )
+        .reset_index()
+    )
+    return [
+        {
+            'business_id': business_id,
+            'data_year': data_year,
+            'month': int(row.month),
+            'revenue': round(float(row.revenue), 2),
+            'total_orders': int(row.total_orders),
+            'total_quantity': int(row.total_quantity),
+            'source_batch_id': batch_id,
+        }
+        for row in grouped.itertuples(index=False)
+    ]
+
+
+def _monthly_actual_records(clean_df: pd.DataFrame, business_id: int, actual_year: int, batch_id: int) -> list[dict]:
+    year_df = clean_df[clean_df['order_date'].dt.year == actual_year].copy()
+    if year_df.empty:
+        return []
+    year_df['month'] = year_df['order_date'].dt.month.astype(int)
+    grouped = year_df.groupby('month').agg(revenue=('total_revenue', 'sum')).reset_index()
+    return [
+        {
+            'business_id': business_id,
+            'actual_year': actual_year,
+            'month': int(row.month),
+            'revenue': round(float(row.revenue), 2),
+            'source_batch_id': batch_id,
+        }
+        for row in grouped.itertuples(index=False)
+    ]
+
+
 def _build_dimension_caches(db: Session):
     """Pre-load all existing dimension records into dictionaries for fast lookup."""
     product_cache = {p.name: p for p in db.query(Product).all()}
@@ -185,7 +260,7 @@ def process_batch(db: Session, batch_id: int):
     if not batch:
         raise ValueError('Batch not found')
 
-    file_path = get_batch_file_path(batch_id)
+    file_path = get_batch_file_path(batch_id, batch.file_name)
     if not file_path or not Path(file_path).exists():
         batch.file_status = 'failed'
         batch.error_summary = 'Uploaded file not found'
@@ -212,11 +287,23 @@ def process_batch(db: Session, batch_id: int):
 
         total_rows = len(df)
         batch.total_rows = int(total_rows)
+        data_type = (batch.data_type or 'base').lower().strip()
+        if data_type not in {'base', 'actual'}:
+            batch.file_status = 'failed'
+            batch.error_summary = 'data_type must be "base" or "actual"'
+            db.commit()
+            log(db, batch_id, 'validate', batch.error_summary, 'ERROR')
+            return {'status': 'failed', 'reason': batch.error_summary}
+        business_id = batch.business_id or 1
+        batch.business_id = business_id
+        batch.data_type = data_type
         db.commit()
 
         # Clear previous data for this batch
         db.query(SalesRaw).filter(SalesRaw.batch_id == batch_id).delete()
         db.query(SalesCleaned).filter(SalesCleaned.batch_id == batch_id).delete()
+        db.query(MonthlyRevenue).filter(MonthlyRevenue.source_batch_id == batch_id).delete()
+        db.query(ActualRevenue).filter(ActualRevenue.source_batch_id == batch_id).delete()
         db.query(DataQualityReport).filter(DataQualityReport.batch_id == batch_id).delete()
         db.commit()
 
@@ -273,7 +360,14 @@ def process_batch(db: Session, batch_id: int):
         revenue_diff = (clean_df['quantity'] * clean_df['unit_price'] - clean_df['total_revenue']).abs()
         invalid_logic_mask = invalid_logic_mask | (revenue_diff > 0.01)
 
-        clean_df = clean_df[~invalid_logic_mask].dropna(subset=REQUIRED_COLUMNS).copy()
+        valid_metric_df = clean_df[~invalid_logic_mask].copy()
+        outlier_mask = (
+            _iqr_outlier_mask(valid_metric_df['total_revenue'])
+            | _iqr_outlier_mask(valid_metric_df['quantity'])
+        )
+        outlier_count = int(outlier_mask.sum())
+
+        clean_df = valid_metric_df.dropna(subset=REQUIRED_COLUMNS).copy()
 
         invalid_count = int(total_rows - len(clean_df))
         clean_df['product_name'] = clean_df['product_name'].astype(str).str.title()
@@ -281,34 +375,59 @@ def process_batch(db: Session, batch_id: int):
         clean_df['store_name'] = clean_df['store_name'].astype(str).str.title()
         clean_df['category'] = clean_df['category'].astype(str).str.title()
         clean_df['quantity'] = clean_df['quantity'].astype(int)
+        data_year = batch.data_year or _infer_data_year(clean_df)
+        if data_year is not None:
+            batch.data_year = int(data_year)
 
         # ── LOAD: Bulk insert cleaned rows with cached dimensions ──
-        product_cache, region_cache, store_cache = _build_dimension_caches(db)
+        aggregate_records: list[dict] = []
+        cleaned_records: list[dict] = []
 
-        cleaned_records = []
-        for row in clean_df.itertuples(index=False):
-            region = get_or_create_region(db, str(row.region_name), region_cache)
-            product = get_or_create_product(db, str(row.product_name), product_cache)
-            store = get_or_create_store(db, str(row.store_name), region.id, store_cache)
+        if data_type == 'base':
+            product_cache, region_cache, store_cache = _build_dimension_caches(db)
 
-            cleaned_records.append({
-                'batch_id': batch_id,
-                'order_id': str(row.order_id),
-                'order_date': row.order_date.date() if hasattr(row.order_date, 'date') else row.order_date,
-                'product_id': product.id,
-                'region_id': region.id,
-                'store_id': store.id,
-                'product_name': str(row.product_name),
-                'category': str(row.category),
-                'quantity': int(row.quantity),
-                'unit_price': float(row.unit_price),
-                'total_revenue': float(row.total_revenue),
-                'store_name': str(row.store_name),
-                'region_name': str(row.region_name),
-            })
+            for row in clean_df.itertuples(index=False):
+                region = get_or_create_region(db, str(row.region_name), region_cache)
+                product = get_or_create_product(db, str(row.product_name), product_cache)
+                store = get_or_create_store(db, str(row.store_name), region.id, store_cache)
 
-        if cleaned_records:
-            db.bulk_insert_mappings(SalesCleaned, cleaned_records)
+                cleaned_records.append({
+                    'batch_id': batch_id,
+                    'order_id': str(row.order_id),
+                    'order_date': row.order_date.date() if hasattr(row.order_date, 'date') else row.order_date,
+                    'product_id': product.id,
+                    'region_id': region.id,
+                    'store_id': store.id,
+                    'product_name': str(row.product_name),
+                    'category': str(row.category),
+                    'quantity': int(row.quantity),
+                    'unit_price': float(row.unit_price),
+                    'total_revenue': float(row.total_revenue),
+                    'store_name': str(row.store_name),
+                    'region_name': str(row.region_name),
+                })
+
+            if cleaned_records:
+                db.bulk_insert_mappings(SalesCleaned, cleaned_records)
+
+            if data_year is not None:
+                db.query(MonthlyRevenue).filter(
+                    MonthlyRevenue.business_id == business_id,
+                    MonthlyRevenue.data_year == int(data_year),
+                ).delete(synchronize_session=False)
+                aggregate_records = _monthly_base_records(clean_df, business_id, int(data_year), batch_id)
+                if aggregate_records:
+                    db.bulk_insert_mappings(MonthlyRevenue, aggregate_records)
+        else:
+            if data_year is not None:
+                db.query(ActualRevenue).filter(
+                    ActualRevenue.business_id == business_id,
+                    ActualRevenue.actual_year == int(data_year),
+                ).delete(synchronize_session=False)
+                aggregate_records = _monthly_actual_records(clean_df, business_id, int(data_year), batch_id)
+                if aggregate_records:
+                    db.bulk_insert_mappings(ActualRevenue, aggregate_records)
+
         db.commit()
 
         report = DataQualityReport(
@@ -318,29 +437,41 @@ def process_batch(db: Session, batch_id: int):
             invalid_count=invalid_count,
             summary=(
                 f'original_rows={total_rows}, cleaned_rows={len(clean_df)}, '
-                f'missing={missing_count}, duplicate={duplicate_count}, invalid={invalid_count}'
+                f'missing={missing_count}, duplicate={duplicate_count}, invalid={invalid_count}, '
+                f'outliers_iqr={outlier_count}, data_type={data_type}, '
+                f'aggregate_months={len(aggregate_records)}'
             ),
         )
         db.add(report)
         batch.valid_rows = int(len(clean_df))
         batch.invalid_rows = int(invalid_count)
         batch.file_status = 'processed'
-        batch.notes = f'ETL completed successfully at {datetime.now(timezone.utc).isoformat()}'
+        batch.notes = f'ETL completed for {data_type} data at {datetime.now(timezone.utc).isoformat()}'
         batch.processed_at = datetime.now(timezone.utc)
         batch.error_summary = None if invalid_count == 0 else f'{invalid_count} invalid rows removed during cleaning'
         db.commit()
 
         log(db, batch_id, 'transform', f'Cleaned rows: {len(clean_df)} | Invalid rows: {invalid_count}')
-        log(db, batch_id, 'load', f'Loaded {len(clean_df)} rows into sales_cleaned')
+        if outlier_count:
+            log(db, batch_id, 'validate', f'Detected {outlier_count} IQR outlier rows', 'WARNING')
+        if data_type == 'base':
+            log(db, batch_id, 'load', f'Loaded {len(cleaned_records)} rows into sales_cleaned and {len(aggregate_records)} monthly revenue rows')
+        else:
+            log(db, batch_id, 'load', f'Loaded {len(aggregate_records)} actual revenue rows')
 
         return {
             'status': 'processed',
             'batch_id': batch_id,
+            'business_id': business_id,
+            'data_year': int(data_year) if data_year is not None else None,
+            'data_type': data_type,
             'total_rows': total_rows,
             'valid_rows': int(len(clean_df)),
             'invalid_rows': invalid_count,
             'duplicate_rows': duplicate_count,
             'missing_count': missing_count,
+            'outlier_rows': outlier_count,
+            'aggregate_months': len(aggregate_records),
         }
     except Exception as exc:
         batch.file_status = 'failed'

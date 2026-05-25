@@ -1,0 +1,25 @@
+order_id,order_date,product_name,category,quantity,unit_price,total_revenue,store_name,region_name
+B2024-001,2024-01-05,espresso machine,Equipment,1,6000,6000,Store A,North
+B2024-002,2024-01-18,coffee beans,Consumable,1,4000,4000,Store B,South
+B2024-003,2024-02-06,espresso machine,Equipment,1,6200,6200,Store A,North
+B2024-004,2024-02-19,coffee beans,Consumable,1,4300,4300,Store C,Central
+B2024-005,2024-03-07,espresso machine,Equipment,1,6600,6600,Store A,North
+B2024-006,2024-03-21,coffee beans,Consumable,1,4400,4400,Store B,South
+B2024-007,2024-04-08,espresso machine,Equipment,1,7200,7200,Store A,North
+B2024-008,2024-04-22,coffee beans,Consumable,1,4800,4800,Store C,Central
+B2024-009,2024-05-09,espresso machine,Equipment,1,7600,7600,Store A,North
+B2024-010,2024-05-23,coffee beans,Consumable,1,4900,4900,Store B,South
+B2024-011,2024-06-10,espresso machine,Equipment,1,8000,8000,Store A,North
+B2024-012,2024-06-24,coffee beans,Consumable,1,5000,5000,Store C,Central
+B2024-013,2024-07-11,espresso machine,Equipment,1,8500,8500,Store A,North
+B2024-014,2024-07-25,coffee beans,Consumable,1,5500,5500,Store B,South
+B2024-015,2024-08-12,espresso machine,Equipment,1,8800,8800,Store A,North
+B2024-016,2024-08-26,coffee beans,Consumable,1,5700,5700,Store C,Central
+B2024-017,2024-09-13,espresso machine,Equipment,1,9100,9100,Store A,North
+B2024-018,2024-09-27,coffee beans,Consumable,1,5900,5900,Store B,South
+B2024-019,2024-10-14,espresso machine,Equipment,1,9700,9700,Store A,North
+B2024-020,2024-10-28,coffee beans,Consumable,1,6300,6300,Store C,Central
+B2024-021,2024-11-15,espresso machine,Equipment,1,10000,10000,Store A,North
+B2024-022,2024-11-29,coffee beans,Consumable,1,6500,6500,Store B,South
+B2024-023,2024-12-16,espresso machine,Equipment,1,10300,10300,Store A,North
+B2024-024,2024-12-30,coffee beans,Consumable,1,6700,6700,Store C,Central

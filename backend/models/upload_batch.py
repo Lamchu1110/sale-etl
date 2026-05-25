@@ -8,6 +8,9 @@ class UploadBatch(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     uploader_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    business_id = Column(Integer, ForeignKey('businesses.id'), nullable=True, index=True)
+    data_year = Column(Integer, nullable=True, index=True)
+    data_type = Column(String(20), nullable=False, default='base', index=True)
     file_name = Column(String(255), nullable=False)
     stored_path = Column(String(500), nullable=True)
     file_status = Column(String(50), nullable=False, default='uploaded', index=True)

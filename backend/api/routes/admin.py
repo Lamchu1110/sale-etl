@@ -4,8 +4,11 @@ from typing import Optional
 from api.deps import get_current_user, require_admin
 from core.database import get_db
 from core.security import get_password_hash
+from models.actual_revenue import ActualRevenue
+from models.business import Business
 from models.data_quality_report import DataQualityReport
 from models.etl_log import ETLLog
+from models.monthly_revenue import MonthlyRevenue
 from models.sales_cleaned import SalesCleaned
 from models.sales_raw import SalesRaw
 from models.upload_batch import UploadBatch
@@ -54,6 +57,19 @@ def update_batch(
         if payload.file_status not in allowed:
             raise HTTPException(status_code=400, detail=f'Status must be one of: {", ".join(allowed)}')
         batch.file_status = payload.file_status
+    if payload.business_id is not None:
+        if not db.query(Business).filter(Business.id == payload.business_id).first():
+            raise HTTPException(status_code=404, detail='Business not found')
+        batch.business_id = payload.business_id
+    if payload.data_year is not None:
+        if payload.data_year < 1900 or payload.data_year > 2200:
+            raise HTTPException(status_code=400, detail='data_year must be between 1900 and 2200')
+        batch.data_year = payload.data_year
+    if payload.data_type is not None:
+        data_type = payload.data_type.lower().strip()
+        if data_type not in {'base', 'actual'}:
+            raise HTTPException(status_code=400, detail='data_type must be "base" or "actual"')
+        batch.data_type = data_type
     db.commit()
     db.refresh(batch)
     return batch
@@ -71,6 +87,8 @@ def delete_batch(
     # Cascade-delete related data
     db.query(SalesCleaned).filter(SalesCleaned.batch_id == batch_id).delete()
     db.query(SalesRaw).filter(SalesRaw.batch_id == batch_id).delete()
+    db.query(MonthlyRevenue).filter(MonthlyRevenue.source_batch_id == batch_id).delete()
+    db.query(ActualRevenue).filter(ActualRevenue.source_batch_id == batch_id).delete()
     db.query(ETLLog).filter(ETLLog.batch_id == batch_id).delete()
     db.query(DataQualityReport).filter(DataQualityReport.batch_id == batch_id).delete()
     db.delete(batch)

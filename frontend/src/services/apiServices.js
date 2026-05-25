@@ -10,10 +10,18 @@ export const authService = {
 };
 
 // ── Upload ────────────────────────────────────────────────────────────────
+export const businessService = {
+  getAll: () => api.get('/businesses').then(r => r.data),
+  create: (data) => api.post('/businesses', data).then(r => r.data),
+};
+
 export const uploadService = {
-  uploadCSV: (file, onProgress) => {
+  uploadCSV: (file, onProgress, metadata = {}) => {
     const form = new FormData();
     form.append('file', file);
+    form.append('business_id', metadata.business_id || 1);
+    if (metadata.data_year) form.append('data_year', metadata.data_year);
+    form.append('data_type', metadata.data_type || 'base');
     return api.post('/uploads/csv', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
       onUploadProgress: e => onProgress && onProgress(Math.round((e.loaded * 100) / e.total)),
@@ -33,17 +41,26 @@ export const etlService = {
 
 // ── Analytics ─────────────────────────────────────────────────────────────
 export const analyticsService = {
+  getFilterOptions:   ()       => api.get('/analytics/filters').then(r => r.data),
   getSummary:         (params) => api.get('/analytics/summary', { params }).then(r => r.data),
-  getRevenueByRegion: ()       => api.get('/analytics/revenue-by-region').then(r => r.data),
-  getRevenueByProduct:(limit = 10) => api.get('/analytics/revenue-by-product', { params: { limit } }).then(r => r.data),
-  getRevenueTrend:    ()       => api.get('/analytics/trend').then(r => r.data),
-  getKPIs:            ()       => api.get('/analytics/kpis').then(r => r.data),
+  getRevenueByRegion: (params) => api.get('/analytics/revenue-by-region', { params }).then(r => r.data),
+  getRevenueByProduct:(limit = 10, params = {}) => api.get('/analytics/revenue-by-product', { params: { ...params, limit } }).then(r => r.data),
+  getRevenueTrend:    (params) => api.get('/analytics/trend', { params }).then(r => r.data),
+  getKPIs:            (params) => api.get('/analytics/kpis', { params }).then(r => r.data),
 };
 
 // ── Forecast ──────────────────────────────────────────────────────────────
 export const forecastService = {
-  generate:    (periods = 7) => api.post('/forecast/generate', { periods }).then(r => r.data),
-  getHistory:  ()            => api.get('/forecast/history').then(r => r.data),
+  generate:    (payload) => api.post('/forecast/generate', payload).then(r => r.data),
+  getHistory:  (params)  => api.get('/forecast/history', { params }).then(r => r.data),
+  getRun:      (id)      => api.get(`/forecast/runs/${id}`).then(r => r.data),
+};
+
+export const evaluationService = {
+  evaluateRun: (forecastRunId) => api.post(`/evaluation/forecast-runs/${forecastRunId}`).then(r => r.data),
+  getHistory:  (params) => api.get('/evaluation/history', { params }).then(r => r.data),
+  getDetail:   (id) => api.get(`/evaluation/${id}`).then(r => r.data),
+  exportCsv:   (id) => api.get(`/evaluation/${id}/export`, { responseType: 'blob' }).then(r => r.data),
 };
 
 // ── Admin ─────────────────────────────────────────────────────────────────

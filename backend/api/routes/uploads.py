@@ -1,20 +1,25 @@
 from pathlib import Path
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from sqlalchemy.orm import Session
 from api.deps import get_current_user
 from core.config import settings
 from core.database import get_db
+from models.business import Business
 from models.upload_batch import UploadBatch
 from models.user import User
 from schemas.upload import BatchOut
 from services.upload_service import save_upload_file
 
 router = APIRouter()
+ALLOWED_DATA_TYPES = {'base', 'actual'}
 
 
 @router.post('/csv', response_model=BatchOut)
 def upload_csv(
     file: UploadFile = File(...),
+    business_id: int = Form(default=1),
+    data_year: int | None = Form(default=None),
+    data_type: str = Form(default='base'),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -23,8 +28,19 @@ def upload_csv(
     if extension not in allowed:
         raise HTTPException(status_code=400, detail=f'Only {allowed} files are allowed')
 
+    normalized_type = data_type.lower().strip()
+    if normalized_type not in ALLOWED_DATA_TYPES:
+        raise HTTPException(status_code=400, detail='data_type must be "base" or "actual"')
+    if data_year is not None and (data_year < 1900 or data_year > 2200):
+        raise HTTPException(status_code=400, detail='data_year must be between 1900 and 2200')
+    if not db.query(Business).filter(Business.id == business_id).first():
+        raise HTTPException(status_code=404, detail='Business not found')
+
     batch = UploadBatch(
         uploader_id=current_user.id,
+        business_id=business_id,
+        data_year=data_year,
+        data_type=normalized_type,
         file_name=file.filename or 'uploaded.csv',
         file_status='uploaded',
         notes='File uploaded, waiting for ETL processing',
